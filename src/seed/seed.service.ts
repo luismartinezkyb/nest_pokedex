@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PokemonResponse } from './interfaces/poke-response.interface';
 import { PokemonService } from 'src/pokemon/pokemon.service';
 import { Pokemon } from 'src/pokemon/entities/pokemon.entity';
@@ -14,6 +14,10 @@ export class SeedService {
     const data = await http<PokemonResponse>(
       'https://pokeapi.co/api/v2/pokemon?limit=10&offset=0',
     );
+
+    // BORRAR LOS REGISTROS DE LA TABLA
+    await this.pokemonModel.deleteMany();
+
     // const data:PokemonResponse = await response.json<PokemonResponse>();
     const dataToInsert: Pokemon[] = [];
     data.results.forEach(({ name, url }) => {
@@ -29,7 +33,12 @@ export class SeedService {
 }
 
 export async function http<T>(request: RequestInfo): Promise<T> {
-  const response = await fetch(request);
-  const body = await response.json();
-  return body;
+  try {
+    const response = await fetch(request);
+    const body = await response.json();
+    return body;
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestException('Something went wrong with the request');
+  }
 }
